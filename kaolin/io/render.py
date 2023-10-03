@@ -23,9 +23,9 @@ from PIL import Image
 from ..render.camera import generate_perspective_projection
 
 
-def import_synthetic_view(root_dir, idx, rgb=True, depth_linear=False,
+def import_synthetic_view(root_dir, idx, rgb=True, depth=False,
                           semantic=False, instance=False, normals=False,
-                          bbox_2d_tight=False, bbox_2d_loose=False):
+                          bbox_2d_tight=False, bbox_2d_loose=False, bbox_3d=False):
     """Import views of synthetic data simulating sensors on 3D models,
     following the format output by the Data Generator extension in the `Omniverse Kaolin App`_.
 
@@ -33,28 +33,33 @@ def import_synthetic_view(root_dir, idx, rgb=True, depth_linear=False,
         root_dir (str): path to the root directory containin the views.
         idx (int): index of the view selected.
         rgb (bool, optional): if True, load RGB image. Default: True.
-        depth_linear (bool, optional): if True, load depth map with linear scaling. Default: False.
+        depth (bool, optional): if True, load depth map with linear scaling. Default: False.
         semantic (bool, optional): if True, load semantic segmentation map. Default: False.
         instance (bool, optional): if True, load instance segmentation map. Default: False.
         normals (bool, optional): if True, load normals map. Default: False.
         bbox_2d_tight (bool, optional): if True, load tight 2d bounding box. Default: False.
         bbox_2d_loose (bool, optional): if True, load loose 2d bounding box. Default: False.
+        bbox_3d (bool, optional): if True, load 3d bounding box. Default: False.
 
     Returns:
         (dict):
             A dictionary of all the sensors selected depending on the arguments:
 
             - **rgb** (torch.FloatTensor): the RGB image, of shape :math:`(B, H, W, 3)`.
-            - **depth_linear** (torch.FloatTensor):
+            - **depth** (torch.FloatTensor):
               the depth map with linear scaling, of shape :math:`(B, H, W)`.
             - **semantic** (torch.IntTensor):
               the semantic segmentation map, of shape :math:`(B, H, W)`.
             - **instance** (torch.IntTensor):
               the instance segmentation map, of shape :math:`(B, H, W)`.
-            - **bbox_2d_tight** (dict):
-              the bounding box, as 4 floats (xmin, xmax, ymin, ymax).
             - **normals** (torch.FloatTensor):
               the normals map, of shape :math:`(B, H, W, 3)`.
+            - **bbox_2d_tight** (dict):
+              the tight bounding box, as 4 floats (xmin, xmax, ymin, ymax).
+            - **bbox_2d_loose** (dict):
+              the loose bounding box, as 4 floats (xmin, xmax, ymin, ymax).
+            - **bbox_3d** (dict):
+              the 3D bounding box, as 6 floats (xmin, xmax, ymin, ymax, zmin, zmax).
             - And **metadata**, a dictionary containing:
 
               - **assets_transform** (torch.FloatTensor):
@@ -91,8 +96,8 @@ def import_synthetic_view(root_dir, idx, rgb=True, depth_linear=False,
     if rgb:
         _import_png('rgb')
 
-    if depth_linear:
-        _import_npy('depth_linear')
+    if depth:
+        _import_npy('depth')
 
     if semantic:
         _import_npy('semantic')
@@ -122,5 +127,7 @@ def import_synthetic_view(root_dir, idx, rgb=True, depth_linear=False,
             output['bbox_2d_tight'] = fmetadata['bbox_2d_tight']
         if bbox_2d_loose:
             output['bbox_2d_loose'] = fmetadata['bbox_2d_loose']
+        if bbox_3d:
+            output['bbox_3d'] = fmetadata['bbox_3d']
 
     return output

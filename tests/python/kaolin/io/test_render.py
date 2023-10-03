@@ -38,8 +38,8 @@ class TestImportView:
         )[:, :, :3].float() / 255.
 
     @pytest.fixture(autouse=True)
-    def expected_depth_linear(self):
-        path = os.path.join(SAMPLE_DIR, '0_depth_linear.npy')
+    def expected_depth(self):
+        path = os.path.join(SAMPLE_DIR, '0_depth.npy')
         return torch.from_numpy(np.load(path))
 
     @pytest.fixture(autouse=True)
@@ -89,39 +89,45 @@ class TestImportView:
     @pytest.fixture(autouse=True)
     def expected_bbox_2d_loose(self, expected_json):
         return expected_json['bbox_2d_loose']
+    
+    @pytest.fixture(autouse=True)
+    def expected_bbox_3d(self, expected_json):
+        return expected_json['bbox_3d']
 
     @pytest.mark.parametrize('with_rgb', [True, False])
-    @pytest.mark.parametrize('with_depth_linear', [True, False])
+    @pytest.mark.parametrize('with_depth', [True, False])
     @pytest.mark.parametrize('with_semantic', [True, False])
     @pytest.mark.parametrize('with_instance', [True, False])
     @pytest.mark.parametrize('with_normals', [True, False])
     @pytest.mark.parametrize('with_bbox_2d_tight', [True, False])
     @pytest.mark.parametrize('with_bbox_2d_loose', [True, False])
-    def test_import_synthetic_view(self, expected_rgb, expected_depth_linear,
+    @pytest.mark.parametrize('with_bbox_3d', [True, False])
+    def test_import_synthetic_view(self, expected_rgb, expected_depth,
                                    expected_semantic, expected_instance,
                                    expected_normals, expected_bbox_2d_tight,
-                                   expected_bbox_2d_loose, expected_metadata,
-                                   with_rgb, with_depth_linear, with_semantic,
+                                   expected_bbox_2d_loose, expected_bbox_3d, expected_metadata,
+                                   with_rgb, with_depth, with_semantic,
                                    with_instance, with_normals, with_bbox_2d_tight,
-                                   with_bbox_2d_loose):
+                                   with_bbox_2d_loose, with_bbox_3d):
         output = render.import_synthetic_view(SAMPLE_DIR, 0,
                                               rgb=with_rgb,
-                                              depth_linear=with_depth_linear,
+                                              depth=with_depth,
                                               semantic=with_semantic,
                                               instance=with_instance,
                                               normals=with_normals,
                                               bbox_2d_tight=with_bbox_2d_tight,
-                                              bbox_2d_loose=with_bbox_2d_loose)
+                                              bbox_2d_loose=with_bbox_2d_loose,
+                                              bbox_3d=with_bbox_3d)
 
         if with_rgb:
             assert torch.equal(output['rgb'], expected_rgb)
         else:
             assert 'rgb' not in output
 
-        if with_depth_linear:
-            assert torch.equal(output['depth_linear'], expected_depth_linear)
+        if with_depth:
+            assert torch.equal(output['depth'], expected_depth)
         else:
-            assert 'depth_linear' not in output
+            assert 'depth' not in output
 
         if with_semantic:
             assert torch.equal(output['semantic'], expected_semantic)
@@ -147,6 +153,11 @@ class TestImportView:
             assert output['bbox_2d_loose'] == expected_bbox_2d_loose
         else:
             assert 'bbox_2d_loose' not in output
+
+        if with_bbox_3d:
+            assert output['bbox_3d'] == expected_bbox_3d
+        else:
+            assert 'bbox_3d' not in output
 
         assert expected_metadata.keys() == output['metadata'].keys()
         assert torch.equal(expected_metadata['cam_transform'],
